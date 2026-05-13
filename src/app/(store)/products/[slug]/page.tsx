@@ -1,16 +1,41 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Star } from "lucide-react";
 import { db } from "@/lib/db";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatPrice, formatDate } from "@/lib/utils";
+import ProductImageGallery from "@/components/store/ProductImageGallery";
+import AddToCartButton from "@/components/store/AddToCartButton";
+
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  try {
+    const products = await db.product.findMany({
+      where: { isArchived: false },
+      select: { slug: true },
+    });
+    return products.map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await db.product.findUnique({ where: { slug } });
   if (!product) return { title: "Produto não encontrado" };
-  return { title: product.name, description: product.description.slice(0, 160) };
+  return {
+    title: `${product.name} — ShopForge`,
+    description: product.description.slice(0, 160),
+  };
 }
 
 export default async function ProductPage({ params }: Props) {
@@ -29,15 +54,186 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
 
+  const avgRating =
+    product.reviews.length > 0
+      ? product.reviews.reduce((sum, r) => sum + r.rating, 0) /
+        product.reviews.length
+      : 0;
+
+  const price = Number(product.price);
+
   return (
     <main className="container mx-auto px-4 py-8">
-      {/* TODO: ProductImages, ProductInfo, AddToCart, Reviews */}
-      <h1 className="text-3xl font-bold">{product.name}</h1>
-      <p className="mt-2 text-gray-600">{product.category.name}</p>
-      <p className="mt-4 text-xl font-semibold">
-        R$ {Number(product.price).toFixed(2)}
-      </p>
-      <p className="mt-4 text-gray-700">{product.description}</p>
+      <div className="grid gap-10 md:grid-cols-2">
+        {/* Image gallery — client component */}
+        <ProductImageGallery
+          images={product.images.length > 0 ? product.images : ["/placeholder.png"]}
+          productName={product.name}
+        />
+
+        {/* Product info */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <Badge variant="secondary" className="mb-2">
+              {product.category.name}
+            </Badge>
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+          </div>
+
+          {product.reviews.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`size-4 ${
+                      i < Math.round(avgRating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "fill-muted text-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {avgRating.toFixed(1)} (
+                {product.reviews.length} avaliação
+                {product.reviews.length !== 1 ? "ões" : ""})
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-bold">{formatPrice(price)}</span>
+            {product.comparePrice &&
+              Number(product.comparePrice) > price && (
+                <span className="text-lg text-muted-foreground line-through">
+                  {formatPrice(product.comparePrice)}
+                </span>
+              )}
+          </div>
+
+          <p
+            className={`text-sm font-medium ${
+              product.stock > 0
+                ? "text-green-600 dark:text-green-400"
+                : "text-red-500"
+            }`}
+          >
+            {product.stock > 0
+              ? `${product.stock} em estoque`
+              : "Produto esgotado"}
+          </p>
+
+          <Separator />
+
+          {/* Add to cart — client component */}
+          <AddToCartButton
+            product={{
+              id: product.id,
+              name: product.name,
+              price,
+              images: product.images,
+              slug: product.slug,
+              stock: product.stock,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="mt-12">
+        <Tabs defaultValue="description">
+          <TabsList>
+            <TabsTrigger value="description">Descrição</TabsTrigger>
+            <TabsTrigger value="reviews">
+              Avaliações ({product.reviews.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="description" className="mt-6">
+            <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
+              {product.description}
+            </p>
+          </TabsContent>
+
+          <TabsContent value="reviews" className="mt-6">
+            {product.reviews.length === 0 ? (
+              <p className="text-muted-foreground">Nenhuma avaliação ainda.</p>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-5xl font-bold">
+                    {avgRating.toFixed(1)}
+                  </span>
+                  <div>
+                    <div className="flex">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`size-5 ${
+                            i < Math.round(avgRating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "fill-muted text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {product.reviews.length} avaliação
+                      {product.reviews.length !== 1 ? "ões" : ""}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-6">
+                  {product.reviews.map((review) => (
+                    <div key={review.id}>
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-9 w-9 shrink-0">
+                          <AvatarImage src={review.user.image ?? undefined} />
+                          <AvatarFallback>
+                            {review.user.name?.charAt(0).toUpperCase() ?? "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium">
+                              {review.user.name ?? "Usuário"}
+                            </p>
+                            <div className="flex">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`size-3.5 ${
+                                    i < review.rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "fill-muted text-muted"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {formatDate(review.createdAt)}
+                          </p>
+                          {review.comment && (
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              {review.comment}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Separator className="mt-4" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </main>
   );
 }
