@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/store/ProductCard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "ShopForge — A Melhor Loja Online",
   description:

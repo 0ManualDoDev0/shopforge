@@ -7,6 +7,7 @@ import ProductCard from "@/components/store/ProductCard";
 import FilterSidebar from "@/components/store/FilterSidebar";
 import ProductsSearchBar from "@/components/store/ProductsSearchBar";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Produtos — ShopForge" };
 
 const PER_PAGE = 12;
