@@ -37,3 +37,13 @@ export type OrderWithUser = Order & {
   user: Pick<User, "id" | "name" | "email">;
   items: (OrderItem & { product: Pick<Product, "id" | "name"> })[];
 };
+
+export type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stock: number;
+  slug: string;
+};
