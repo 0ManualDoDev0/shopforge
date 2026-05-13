@@ -3,10 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "utfs.io",
-      },
+      { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "ufs.sh" },
     ],
   },
   async headers() {
@@ -31,7 +30,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://utfs.io https://*.stripe.com",
+              "img-src 'self' data: blob: https://utfs.io https://ufs.sh https://images.unsplash.com https://*.stripe.com",
               "font-src 'self'",
               "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://uploadthing.com https://utfs.io",
               "frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com",

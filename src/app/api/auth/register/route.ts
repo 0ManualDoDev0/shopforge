@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { resend, FROM_EMAIL } from "@/lib/resend";
 import { registerSchema } from "@/lib/validations/user.schema";
+import WelcomeEmail from "@emails/WelcomeEmail";
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +11,10 @@ export async function POST(request: Request) {
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", issues: parsed.error.issues },
+        { status: 400 }
+      );
     }
 
     const { name, email, password } = parsed.data;
@@ -25,6 +30,16 @@ export async function POST(request: Request) {
       data: { name, email, password: hashed },
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
+
+    // Fire-and-forget — email failure must never reject the registration response
+    resend.emails
+      .send({
+        from: FROM_EMAIL,
+        to: user.email!,
+        subject: "Bem-vindo ao ShopForge!",
+        react: WelcomeEmail({ customerName: user.name ?? "Cliente" }),
+      })
+      .catch(() => undefined);
 
     return NextResponse.json(user, { status: 201 });
   } catch {

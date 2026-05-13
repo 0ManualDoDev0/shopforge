@@ -10,6 +10,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "db:generate": "prisma generate",
