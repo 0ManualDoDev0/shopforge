@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star } from "lucide-react";
+import { Star, ChevronRight, AlertTriangle } from "lucide-react";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatPrice, formatDate } from "@/lib/utils";
 import ProductImageGallery from "@/components/store/ProductImageGallery";
 import AddToCartButton from "@/components/store/AddToCartButton";
+import TrustBar from "@/components/shared/TrustBar";
+import RecommendedProducts from "@/components/store/RecommendedProducts";
 
 export const revalidate = 3600;
 
@@ -61,11 +64,30 @@ export default async function ProductPage({ params }: Props) {
       : 0;
 
   const price = Number(product.price);
+  const isLowStock = product.stock > 0 && product.stock < 5;
 
   return (
     <main className="container mx-auto px-4 py-8">
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link href="/" className="hover:text-foreground transition-colors">
+          Início
+        </Link>
+        <ChevronRight className="size-3.5 shrink-0" />
+        <Link
+          href={`/products?category=${product.category.slug}`}
+          className="hover:text-foreground transition-colors"
+        >
+          {product.category.name}
+        </Link>
+        <ChevronRight className="size-3.5 shrink-0" />
+        <span className="truncate font-medium text-foreground">
+          {product.name}
+        </span>
+      </nav>
+
       <div className="grid gap-10 md:grid-cols-2">
-        {/* Image gallery — client component */}
+        {/* Image gallery */}
         <ProductImageGallery
           images={product.images.length > 0 ? product.images : ["/placeholder.png"]}
           productName={product.name}
@@ -124,9 +146,19 @@ export default async function ProductPage({ params }: Props) {
               : "Produto esgotado"}
           </p>
 
+          {/* Low stock warning */}
+          {isLowStock && (
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900/40 dark:bg-red-900/20">
+              <AlertTriangle className="size-4 shrink-0 text-red-500" />
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                Apenas {product.stock} restante{product.stock !== 1 ? "s" : ""}!
+              </p>
+            </div>
+          )}
+
           <Separator />
 
-          {/* Add to cart — client component */}
+          {/* Add to cart */}
           <AddToCartButton
             product={{
               id: product.id,
@@ -137,6 +169,9 @@ export default async function ProductPage({ params }: Props) {
               stock: product.stock,
             }}
           />
+
+          {/* Trust signals compact */}
+          <TrustBar compact />
         </div>
       </div>
 
@@ -234,6 +269,12 @@ export default async function ProductPage({ params }: Props) {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Recommended products */}
+      <RecommendedProducts
+        productId={product.id}
+        categorySlug={product.category.slug ?? ""}
+      />
     </main>
   );
 }

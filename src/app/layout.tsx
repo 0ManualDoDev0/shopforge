@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Providers from "@/components/shared/Providers";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
+import AnnouncementBar from "@/components/shared/AnnouncementBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
+          <AnnouncementBar />
           <Navbar />
           {children}
           <Footer />

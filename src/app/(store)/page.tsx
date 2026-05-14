@@ -4,6 +4,8 @@ import { ArrowRight, ShoppingBag, Zap, Shirt, Headphones, Watch, Tag } from "luc
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/store/ProductCard";
+import TrustBar from "@/components/shared/TrustBar";
+import NewsletterSection from "@/components/store/NewsletterSection";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +45,11 @@ async function getCategories() {
 async function getFeaturedProducts() {
   return db.product.findMany({
     where: { isFeatured: true, isArchived: false },
-    include: { category: true },
+    include: {
+      category: true,
+      _count: { select: { orderItems: true } },
+      reviews: { select: { rating: true } },
+    },
     orderBy: { createdAt: "desc" },
     take: 8,
   });
@@ -109,6 +115,9 @@ export default async function StorePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Trust Bar ── */}
+      <TrustBar />
 
       {/* ── Categories ── */}
       <section className="py-14 bg-muted/30">
@@ -187,16 +196,32 @@ export default async function StorePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-              {featured.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {featured.map((product) => {
+                const avgRating =
+                  product.reviews.length > 0
+                    ? product.reviews.reduce((s, r) => s + r.rating, 0) /
+                      product.reviews.length
+                    : 0;
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    avgRating={avgRating}
+                    reviewCount={product.reviews.length}
+                    totalSold={product._count.orderItems}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
+      {/* ── Newsletter ── */}
+      <NewsletterSection />
+
       {/* ── Promotional Banner ── */}
-      <section className="mx-4 mb-16 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 md:mx-auto md:max-w-5xl">
+      <section className="mx-4 my-16 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 md:mx-auto md:max-w-5xl">
         <div className="flex flex-col items-center gap-4 px-8 py-14 text-center md:flex-row md:justify-between md:text-left">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/70">

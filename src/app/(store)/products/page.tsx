@@ -52,7 +52,11 @@ export default async function ProductsPage({ searchParams }: Props) {
   const [products, total, allCategories] = await Promise.all([
     db.product.findMany({
       where,
-      include: { category: true },
+      include: {
+        category: true,
+        _count: { select: { orderItems: true } },
+        reviews: { select: { rating: true } },
+      },
       skip: (currentPage - 1) * PER_PAGE,
       take: PER_PAGE,
       orderBy: { createdAt: "desc" },
@@ -107,9 +111,22 @@ export default async function ProductsPage({ searchParams }: Props) {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {products.map((product) => {
+                const avgRating =
+                  product.reviews.length > 0
+                    ? product.reviews.reduce((s, r) => s + r.rating, 0) /
+                      product.reviews.length
+                    : 0;
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    avgRating={avgRating}
+                    reviewCount={product.reviews.length}
+                    totalSold={product._count.orderItems}
+                  />
+                );
+              })}
             </div>
           )}
 

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,17 @@ import type { ProductWithCategory } from "@/types";
 
 interface ProductCardProps {
   product: ProductWithCategory;
+  avgRating?: number;
+  reviewCount?: number;
+  totalSold?: number;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  avgRating = 0,
+  reviewCount = 0,
+  totalSold = 0,
+}: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
 
   const discount =
@@ -24,6 +32,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           (1 - Number(product.price) / Number(product.comparePrice)) * 100
         )
       : null;
+
+  const isBestSeller = totalSold > 10;
+  const isLowStock = product.stock > 0 && product.stock < 5;
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -65,12 +76,26 @@ export default function ProductCard({ product }: ProductCardProps) {
                 -{discount}%
               </Badge>
             )}
-            {product.isFeatured && (
+            {isBestSeller && (
+              <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-xs px-1.5 py-0.5">
+                Mais Vendido
+              </Badge>
+            )}
+            {product.isFeatured && !isBestSeller && (
               <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
                 Destaque
               </Badge>
             )}
           </div>
+
+          {/* Low stock badge */}
+          {isLowStock && (
+            <div className="absolute bottom-2 left-2 right-2">
+              <span className="block w-full rounded-md bg-red-500/90 px-2 py-0.5 text-center text-[10px] font-medium text-white">
+                Poucas unidades
+              </span>
+            </div>
+          )}
 
           {/* Out of stock overlay */}
           {product.stock === 0 && (
@@ -89,10 +114,31 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.category.name}
         </p>
         <Link href={`/products/${product.slug}`}>
-          <h3 className="text-sm font-medium leading-tight line-clamp-2 hover:underline underline-offset-2 transition-colors mb-2">
+          <h3 className="text-sm font-medium leading-tight line-clamp-2 hover:underline underline-offset-2 transition-colors mb-1">
             {product.name}
           </h3>
         </Link>
+
+        {/* Rating stars */}
+        {reviewCount > 0 && (
+          <div className="mb-2 flex items-center gap-1">
+            <div className="flex">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`size-3 ${
+                    i < Math.round(avgRating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "fill-muted text-muted"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {avgRating.toFixed(1)} ({reviewCount})
+            </span>
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
