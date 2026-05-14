@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: { default: "ShopForge", template: "%s | ShopForge" },
   description: "Plataforma de e-commerce fullstack moderna",
   keywords: ["loja", "e-commerce", "compras", "online"],
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
