@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-> Demo: [shopforge.vercel.app](https://shopforge.vercel.app)
+> Demo: [shopforge.vercel.app](https://shopforge-three.vercel.app)
 
 ---
 
