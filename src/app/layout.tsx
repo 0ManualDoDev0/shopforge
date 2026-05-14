@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "@/components/shared/Providers";
@@ -25,8 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
-          <ProgressBar />
-          <AnnouncementBar />
+          <Suspense fallback={null}>
+            <ProgressBar />
+          </Suspense>
+          <Suspense fallback={null}>
+            <AnnouncementBar />
+          </Suspense>
           <Navbar />
           {children}
           <Footer />
