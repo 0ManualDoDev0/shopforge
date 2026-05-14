@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-    name: Typecheck · Lint · Build
     runs-on: ubuntu-latest
 
     steps:
@@ -20,21 +19,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Enable corepack and activate pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-
-      - name: Get pnpm store path
-        id: pnpm-cache
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -46,22 +32,46 @@ jobs:
 
       - name: Type check
         run: pnpm typecheck
+        env:
+          NEXTAUTH_SECRET: ci-secret-placeholder
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          STRIPE_SECRET_KEY: sk_test_placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+          UPLOADTHING_APP_ID: placeholder
+          UPLOADTHING_SECRET: ut_placeholder
+          RESEND_API_KEY: re_placeholder
+          UPSTASH_REDIS_REST_URL: https://placeholder.upstash.io
+          UPSTASH_REDIS_REST_TOKEN: placeholder_token
 
       - name: Lint
         run: pnpm lint
+        env:
+          NEXTAUTH_SECRET: ci-secret-placeholder
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          STRIPE_SECRET_KEY: sk_test_placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+          UPLOADTHING_APP_ID: placeholder
+          UPLOADTHING_SECRET: ut_placeholder
+          RESEND_API_KEY: re_placeholder
+          UPSTASH_REDIS_REST_URL: https://placeholder.upstash.io
+          UPSTASH_REDIS_REST_TOKEN: placeholder_token
 
       - name: Build
         run: pnpm build
         env:
-          NEXTAUTH_SECRET: "ci-secret-placeholder-32chars-ok"
-          AUTH_SECRET: "ci-secret-placeholder-32chars-ok"
-          NEXTAUTH_URL: "http://localhost:3000"
-          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-          STRIPE_SECRET_KEY: "sk_test_placeholder"
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_placeholder"
-          STRIPE_WEBHOOK_SECRET: "whsec_placeholder"
-          UPLOADTHING_APP_ID: "placeholder"
-          UPLOADTHING_SECRET: "ut_placeholder"
-          RESEND_API_KEY: "re_placeholder"
-          UPSTASH_REDIS_REST_URL: "https://placeholder.upstash.io"
-          UPSTASH_REDIS_REST_TOKEN: "placeholder_token"
+          NEXTAUTH_SECRET: ci-secret-placeholder
+          AUTH_SECRET: ci-secret-placeholder
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          STRIPE_SECRET_KEY: sk_test_placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_placeholder
+          UPLOADTHING_APP_ID: placeholder
+          UPLOADTHING_SECRET: ut_placeholder
+          RESEND_API_KEY: re_placeholder
+          UPSTASH_REDIS_REST_URL: https://placeholder.upstash.io
+          UPSTASH_REDIS_REST_TOKEN: placeholder_token
