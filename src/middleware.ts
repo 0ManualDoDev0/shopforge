@@ -61,7 +61,9 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     const token = await getToken({ req, secret });
     if (!token) {
-      return NextResponse.redirect(new URL("/login", req.nextUrl));
+      const loginUrl = new URL("/login", req.nextUrl);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
     }
     if ((token as { role?: string }).role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", req.nextUrl));

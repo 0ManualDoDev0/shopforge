@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Loader2, ShieldCheck, CreditCard, QrCode } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/store/cartStore";
@@ -27,6 +28,7 @@ interface PixData {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { items, clearCart } = useCartStore();
   const [isLoading, setIsLoading] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -48,6 +50,10 @@ export default function CheckoutPage() {
   }
 
   async function handleCardCheckout() {
+    if (!session?.user) {
+      router.push("/login?callbackUrl=/checkout");
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await fetch("/api/stripe/create-session", {
@@ -78,6 +84,10 @@ export default function CheckoutPage() {
   }
 
   async function handlePixCheckout() {
+    if (!session?.user) {
+      router.push("/login?callbackUrl=/checkout");
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await fetch("/api/mercadopago/create-pix", {

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Meus Pedidos — ShopForge" };
 
 export default async function OrdersPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/login?callbackUrl=/orders");
 
   const orders = await db.order.findMany({
     where: { userId: session.user.id! },

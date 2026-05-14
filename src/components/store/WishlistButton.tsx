@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ interface WishlistButtonProps {
 export default function WishlistButton({ productId, className = "" }: WishlistButtonProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const { ids, load, toggle } = useWishlistStore();
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function WishlistButton({ productId, className = "" }: WishlistBu
     e.stopPropagation();
 
     if (!session?.user) {
-      router.push("/login");
+      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
       return;
     }
 

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Lista de Desejos — ShopForge" };
 
 export default async function WishlistPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/wishlist");
 
   const items = await db.wishlist.findMany({
     where: { userId: session.user.id },
