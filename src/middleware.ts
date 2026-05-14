@@ -17,6 +17,7 @@ interface RateLimitRule {
 const PAYMENT_RATE_RULES: RateLimitRule[] = [
   { prefix: "shopforge:mp",       path: "/api/mercadopago/", limit: 10 },
   { prefix: "shopforge:stripe",   path: "/api/stripe/",      limit: 10 },
+  { prefix: "shopforge:orders",   path: "/api/orders",       limit: 20 },
   { prefix: "shopforge:reviews",  path: "/api/reviews",      limit: 20 },
   { prefix: "shopforge:wishlist", path: "/api/wishlist",     limit: 30 },
 ];

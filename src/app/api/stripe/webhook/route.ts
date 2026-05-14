@@ -34,7 +34,12 @@ export async function POST(req: NextRequest) {
       });
       if (existing) break;
 
-      const items = JSON.parse(itemsJson) as { productId: string; quantity: number }[];
+      let items: { productId: string; quantity: number }[];
+      try {
+        items = JSON.parse(itemsJson) as { productId: string; quantity: number }[];
+      } catch {
+        break; // metadata malformado — não criar pedido duplicado
+      }
 
       // Re-fetch prices from DB to store accurate values
       const products = await db.product.findMany({
