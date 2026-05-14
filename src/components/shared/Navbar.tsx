@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -44,14 +44,11 @@ const navLinks = [
 export default function Navbar() {
   const { data: session } = useSession();
   const { itemCount } = useCart();
-  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => setMounted(true), []);
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
 
@@ -127,76 +124,72 @@ export default function Navbar() {
               )}
             </Button>
 
-            {/* Auth section — only rendered client-side to avoid Base UI portal hydration mismatch */}
-            {mounted ? (
-              session?.user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    className={cn(
-                      "relative rounded-full outline-none",
-                      "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    )}
-                    aria-label="Menu do usuário"
-                  >
-                    <Avatar className="size-8">
-                      <AvatarImage
-                        src={session.user.image ?? ""}
-                        alt={session.user.name ?? "Usuário"}
-                      />
-                      <AvatarFallback className="text-xs">
-                        {session.user.name?.slice(0, 2).toUpperCase() ?? "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
-                      <p className="font-medium truncate">{session.user.name}</p>
-                      <p className="text-xs font-normal text-muted-foreground truncate">
-                        {session.user.email}
-                      </p>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <Link href="/orders" className="flex items-center gap-2 w-full">
-                        <ShoppingBag className="size-4" />
-                        Meus Pedidos
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href="/wishlist" className="flex items-center gap-2 w-full">
-                        <Heart className="size-4" />
-                        Lista de Desejos
-                      </Link>
-                    </DropdownMenuItem>
-                    {userRole === "ADMIN" && (
-                      <DropdownMenuItem>
-                        <Link href="/dashboard" className="flex items-center gap-2 w-full">
-                          <User className="size-4" />
-                          Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                    >
-                      <LogOut className="size-4 mr-2" />
-                      Sair
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button
-                  size="sm"
-                  render={<Link href="/login" />}
-                  className="hidden sm:inline-flex"
+            {/* Auth section */}
+            {session?.user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={cn(
+                    "relative rounded-full outline-none",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  )}
+                  aria-label="Menu do usuário"
                 >
-                  Entrar
-                </Button>
-              )
+                  <Avatar className="size-8">
+                    <AvatarImage
+                      src={session.user.image ?? ""}
+                      alt={session.user.name ?? "Usuário"}
+                    />
+                    <AvatarFallback className="text-xs">
+                      {session.user.name?.slice(0, 2).toUpperCase() ?? "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <p className="font-medium truncate">{session.user.name}</p>
+                    <p className="text-xs font-normal text-muted-foreground truncate">
+                      {session.user.email}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Link href="/orders" className="flex items-center gap-2 w-full">
+                      <ShoppingBag className="size-4" />
+                      Meus Pedidos
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/wishlist" className="flex items-center gap-2 w-full">
+                      <Heart className="size-4" />
+                      Lista de Desejos
+                    </Link>
+                  </DropdownMenuItem>
+                  {userRole === "ADMIN" && (
+                    <DropdownMenuItem>
+                      <Link href="/dashboard" className="flex items-center gap-2 w-full">
+                        <User className="size-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    <LogOut className="size-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <div className="size-8" />
+              <Button
+                size="sm"
+                render={<Link href="/login" />}
+                className="hidden sm:inline-flex"
+              >
+                Entrar
+              </Button>
             )}
 
             {/* Mobile hamburger */}
