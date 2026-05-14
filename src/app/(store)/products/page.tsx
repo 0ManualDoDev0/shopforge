@@ -279,15 +279,21 @@ export default async function ProductsPage({ searchParams }: Props) {
     <main className="container mx-auto px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">Produtos</h1>
 
-      <ProductsSearchBar defaultValue={query} />
+      <Suspense fallback={<div className="animate-pulse h-10 bg-muted rounded" />}>
+        <ProductsSearchBar defaultValue={query} />
+      </Suspense>
 
       <div className="mt-6 flex gap-8">
         <div className="hidden w-60 shrink-0 lg:block">
-          <FilterSidebar categories={allCategories} />
+          <Suspense fallback={<div className="animate-pulse h-96 bg-muted rounded" />}>
+            <FilterSidebar categories={allCategories} />
+          </Suspense>
         </div>
 
         <div className="min-w-0 flex-1">
-          <ProductsToolbar sort={sort} view={view} />
+          <Suspense fallback={<div className="animate-pulse h-10 bg-muted rounded mb-4" />}>
+            <ProductsToolbar sort={sort} view={view} />
+          </Suspense>
           <Suspense key={suspenseKey} fallback={<ProductsSkeleton view={view} />}>
             <ProductsList
               query={query}
