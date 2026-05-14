@@ -12,6 +12,7 @@ import { formatPrice, formatDate } from "@/lib/utils";
 import ProductImageZoom from "@/components/store/ProductImageZoom";
 import ProductPurchase from "@/components/store/ProductPurchase";
 import ReviewForm from "@/components/store/ReviewForm";
+import ShippingCalculator from "@/components/store/ShippingCalculator";
 import TrustBar from "@/components/shared/TrustBar";
 import RecommendedProducts from "@/components/store/RecommendedProducts";
 
@@ -185,6 +186,9 @@ export default async function ProductPage({ params }: Props) {
 
           {/* Trust signals compact */}
           <TrustBar compact />
+
+          {/* Shipping calculator */}
+          <ShippingCalculator />
         </div>
       </div>
 

@@ -7,8 +7,10 @@ import Image from "next/image";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
+import CouponInput from "@/components/store/CouponInput";
 
 const FREE_SHIPPING_THRESHOLD = 200;
 const SHIPPING_COST = 20;
@@ -17,16 +19,21 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, clearCart } = useCartStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponCode, setCouponCode] = useState("");
 
   useEffect(() => {
-    if (items.length === 0) {
-      router.replace("/cart");
-    }
+    if (items.length === 0) router.replace("/cart");
   }, [items.length, router]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const total = subtotal + shipping;
+  const total = Math.max(0, subtotal + shipping - couponDiscount);
+
+  function handleCouponApplied(discount: number, code: string) {
+    setCouponDiscount(discount);
+    setCouponCode(code);
+  }
 
   async function handleCheckout() {
     setIsLoading(true);
@@ -36,6 +43,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+          couponCode: couponCode || undefined,
         }),
       });
 
@@ -93,6 +101,13 @@ export default function CheckoutPage() {
 
         {/* Payment panel */}
         <div className="space-y-4">
+          {/* Coupon */}
+          <div className="rounded-lg border p-4">
+            <h3 className="mb-3 text-sm font-semibold">Cupom de Desconto</h3>
+            <CouponInput cartTotal={subtotal} onCouponApplied={handleCouponApplied} />
+          </div>
+
+          {/* Total */}
           <div className="rounded-lg border p-6">
             <h2 className="mb-4 text-lg font-semibold">Total</h2>
 
@@ -116,9 +131,17 @@ export default function CheckoutPage() {
                   Frete grátis acima de {formatPrice(FREE_SHIPPING_THRESHOLD)}
                 </p>
               )}
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-green-600 dark:text-green-400">
+                  <span>Desconto ({couponCode})</span>
+                  <span>− {formatPrice(couponDiscount)}</span>
+                </div>
+              )}
             </div>
 
-            <div className="mt-4 border-t pt-4 flex justify-between font-bold text-base">
+            <Separator className="my-4" />
+
+            <div className="flex justify-between font-bold text-base">
               <span>Total</span>
               <span>{formatPrice(total)}</span>
             </div>

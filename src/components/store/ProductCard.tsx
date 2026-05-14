@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
+import WishlistButton from "@/components/store/WishlistButton";
 import type { ProductWithCategory } from "@/types";
 
 interface ProductCardProps {
@@ -68,6 +69,11 @@ export default function ProductCard({
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
+
+          {/* Wishlist button */}
+          <div className="absolute top-2 right-2 z-10">
+            <WishlistButton productId={product.id} />
+          </div>
 
           {/* Badges overlay */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">

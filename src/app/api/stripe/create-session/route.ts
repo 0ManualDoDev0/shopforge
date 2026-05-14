@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { items } = (await req.json()) as { items: CartItemInput[] };
+  const { items, couponCode } = (await req.json()) as {
+    items: CartItemInput[];
+    couponCode?: string;
+  };
 
   if (!items?.length) {
     return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -42,9 +45,36 @@ export async function POST(req: NextRequest) {
     };
   });
 
+  // Resolve coupon discount
+  let stripeDiscounts: { coupon: string }[] | undefined;
+
+  if (couponCode) {
+    const coupon = await db.coupon.findUnique({
+      where: { code: couponCode.toUpperCase() },
+    });
+
+    if (coupon && coupon.isActive && coupon.usedCount < coupon.maxUses) {
+      const stripeCoupon = await stripe.coupons.create({
+        percent_off: coupon.discount,
+        duration: "once",
+        name: `Cupom ${coupon.code}`,
+        currency: "brl",
+      });
+
+      stripeDiscounts = [{ coupon: stripeCoupon.id }];
+
+      // Increment usage count
+      await db.coupon.update({
+        where: { id: coupon.id },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
+  }
+
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: lineItems,
+    ...(stripeDiscounts ? { discounts: stripeDiscounts } : {}),
     success_url: `${process.env.NEXTAUTH_URL}/orders?success=true`,
     cancel_url: `${process.env.NEXTAUTH_URL}/cart`,
     metadata: {

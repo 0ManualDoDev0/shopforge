@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   User,
   Search,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -155,6 +156,12 @@ export default function Navbar() {
                     <Link href="/orders" className="flex items-center gap-2 w-full">
                       <ShoppingBag className="size-4" />
                       Meus Pedidos
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/wishlist" className="flex items-center gap-2 w-full">
+                      <Heart className="size-4" />
+                      Lista de Desejos
                     </Link>
                   </DropdownMenuItem>
                   {userRole === "ADMIN" && (

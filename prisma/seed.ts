@@ -8,11 +8,13 @@ async function main() {
 
   // Cleanup in dependency order
   await db.review.deleteMany();
+  await db.wishlist.deleteMany();
   await db.address.deleteMany();
   await db.orderItem.deleteMany();
   await db.order.deleteMany();
   await db.product.deleteMany();
   await db.category.deleteMany();
+  await db.coupon.deleteMany();
   await db.account.deleteMany();
   await db.session.deleteMany();
   await db.user.deleteMany();
@@ -344,12 +346,37 @@ async function main() {
     }),
   ]);
 
+  // ── Coupons ───────────────────────────────────────────────────────────────
+  await Promise.all([
+    db.coupon.create({
+      data: {
+        code: "PRIMEIRACOMPRA",
+        discount: 10,
+        isActive: true,
+        maxUses: 1000,
+        minValue: 50,
+        usedCount: 0,
+      },
+    }),
+    db.coupon.create({
+      data: {
+        code: "SHOPFORGE20",
+        discount: 20,
+        isActive: true,
+        maxUses: 500,
+        minValue: 200,
+        usedCount: 0,
+      },
+    }),
+  ]);
+
   console.log("✅ Seed concluído com sucesso!");
   console.log("   → 3 categorias: Roupas, Eletrônicos, Acessórios");
   console.log("   → 12 produtos (4 em destaque: camiseta, jaqueta, notebook, fone)");
   console.log("   → admin@shopforge.com / Admin@123");
   console.log("   → user@shopforge.com  / User@123");
   console.log("   → 2 pedidos DELIVERED + 3 reviews");
+  console.log("   → 2 cupons: PRIMEIRACOMPRA (10%) e SHOPFORGE20 (20%)");
   console.log(`   Seed ignorado: ${adminUser.email}`); // avoid unused var warning
 }
 
