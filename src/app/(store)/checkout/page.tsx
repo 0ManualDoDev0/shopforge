@@ -4,16 +4,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, CreditCard, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import CouponInput from "@/components/store/CouponInput";
+import PixPayment from "@/components/store/PixPayment";
 
 const FREE_SHIPPING_THRESHOLD = 200;
 const SHIPPING_COST = 20;
+
+type PaymentMethod = "card" | "pix";
+
+interface PixData {
+  qrCode: string;
+  qrCodeBase64: string;
+  paymentId: number;
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -21,10 +31,12 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponCode, setCouponCode] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [pixData, setPixData] = useState<PixData | null>(null);
 
   useEffect(() => {
-    if (items.length === 0) router.replace("/cart");
-  }, [items.length, router]);
+    if (items.length === 0 && !pixData) router.replace("/cart");
+  }, [items.length, pixData, router]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
@@ -35,7 +47,7 @@ export default function CheckoutPage() {
     setCouponCode(code);
   }
 
-  async function handleCheckout() {
+  async function handleCardCheckout() {
     setIsLoading(true);
     try {
       const res = await fetch("/api/stripe/create-session", {
@@ -65,7 +77,51 @@ export default function CheckoutPage() {
     }
   }
 
-  if (items.length === 0) return null;
+  async function handlePixCheckout() {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/mercadopago/create-pix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+          couponCode: couponCode || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Erro ao gerar Pix");
+      }
+
+      const data = (await res.json()) as PixData;
+      clearCart();
+      setPixData(data);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar Pix");
+      setIsLoading(false);
+    }
+  }
+
+  function handleCheckout() {
+    if (paymentMethod === "pix") return handlePixCheckout();
+    return handleCardCheckout();
+  }
+
+  if (items.length === 0 && !pixData) return null;
+
+  if (pixData) {
+    return (
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="mb-8 text-2xl font-bold">Pagar com Pix</h1>
+        <PixPayment
+          qrCode={pixData.qrCode}
+          qrCodeBase64={pixData.qrCodeBase64}
+          paymentId={pixData.paymentId}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -107,6 +163,39 @@ export default function CheckoutPage() {
             <CouponInput cartTotal={subtotal} onCouponApplied={handleCouponApplied} />
           </div>
 
+          {/* Payment method selector */}
+          <div className="rounded-lg border p-4">
+            <h3 className="mb-3 text-sm font-semibold">Forma de Pagamento</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("card")}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors",
+                  paymentMethod === "card"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "hover:bg-muted/50"
+                )}
+              >
+                <CreditCard className="size-5" />
+                Cartão de Crédito
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("pix")}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors",
+                  paymentMethod === "pix"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "hover:bg-muted/50"
+                )}
+              >
+                <QrCode className="size-5" />
+                Pix
+              </button>
+            </div>
+          </div>
+
           {/* Total */}
           <div className="rounded-lg border p-6">
             <h2 className="mb-4 text-lg font-semibold">Total</h2>
@@ -120,7 +209,7 @@ export default function CheckoutPage() {
                 <span className="text-muted-foreground">Frete</span>
                 <span>
                   {shipping === 0 ? (
-                    <span className="text-green-600 font-medium">Grátis</span>
+                    <span className="font-medium text-green-600">Grátis</span>
                   ) : (
                     formatPrice(shipping)
                   )}
@@ -141,7 +230,7 @@ export default function CheckoutPage() {
 
             <Separator className="my-4" />
 
-            <div className="flex justify-between font-bold text-base">
+            <div className="flex justify-between text-base font-bold">
               <span>Total</span>
               <span>{formatPrice(total)}</span>
             </div>
@@ -154,7 +243,12 @@ export default function CheckoutPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Redirecionando...
+                  {paymentMethod === "pix" ? "Gerando Pix..." : "Redirecionando..."}
+                </>
+              ) : paymentMethod === "pix" ? (
+                <>
+                  <QrCode className="mr-2 size-4" />
+                  Gerar QR Code Pix
                 </>
               ) : (
                 "Finalizar com Cartão"
@@ -163,7 +257,11 @@ export default function CheckoutPage() {
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="size-3.5" />
-              <span>Pagamento seguro via Stripe</span>
+              <span>
+                {paymentMethod === "pix"
+                  ? "Pagamento instantâneo via Pix"
+                  : "Pagamento seguro via Stripe"}
+              </span>
             </div>
           </div>
 
