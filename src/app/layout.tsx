@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "@/components/shared/Providers";
+import Navbar from "@/components/shared/Navbar";
+import Footer from "@/components/shared/Footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
+          <Navbar />
           {children}
+          <Footer />
           <Toaster richColors position="top-right" closeButton />
         </Providers>
       </body>
