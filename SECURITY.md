@@ -1,117 +1,69 @@
 # Security Policy
 
-This document describes how ShopForge addresses each item of the [OWASP Top 10](https://owasp.org/www-project-top-ten/) (2021 edition).
-
----
-
-## OWASP Top 10 Coverage
-
-### A01 — Broken Access Control
-
-| Control | Implementation |
-|---|---|
-| Dashboard protection | `src/middleware.ts` — every request to `/dashboard/*` is intercepted; `getToken()` (next-auth/jwt) validates the JWT and verifies `role === "ADMIN"` before forwarding. Non-authenticated users are redirected to `/login`; authenticated non-admins to `/`. |
-| API route authorization | All mutating product endpoints (`POST /api/products`, `PATCH /api/products/[id]`, `DELETE /api/products/[id]`) repeat the ADMIN check independently of the middleware. |
-| User-scoped data | `GET /api/orders` returns only the authenticated user's orders (`where: { userId: session.user.id }`). ADMIN accounts may query all orders via a role check. |
-| Order status changes | `PATCH /api/orders/[id]` validates `role === "ADMIN"` before allowing any status update. |
-
----
-
-### A02 — Cryptographic Failures
-
-| Control | Implementation |
-|---|---|
-| Password hashing | `bcryptjs` with **cost factor 12** (`bcrypt.hash(password, 12)`). Plain-text passwords are never stored or logged. |
-| Secret management | `AUTH_SECRET` / `NEXTAUTH_SECRET` loaded exclusively from environment variables; no hardcoded secrets anywhere in the codebase. |
-| HTTPS enforcement | `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` header applied to all routes via `next.config.ts`. |
-| No sensitive logging | Prisma log level is set to `["error"]` in production; no user credentials, tokens, or payment data are written to logs. |
-| Stripe data | Card data never touches the server — Stripe Checkout handles PCI compliance on their infrastructure. |
-
----
-
-### A03 — Injection
-
-| Control | Implementation |
-|---|---|
-| ORM-level protection | 100% of database queries go through **Prisma**, which uses parameterized prepared statements. Raw SQL (`$queryRaw`, `$executeRaw`) is never used. |
-| Input validation | Every API endpoint validates its request body with **Zod** before the data reaches the database layer (e.g. `productSchema`, `createOrderSchema`, `updateSchema`). |
-| Type-safe queries | TypeScript strict mode (`"strict": true`) ensures query arguments are typed at compile time, preventing accidental string interpolation. |
-
----
-
-### A04 — Insecure Design
-
-| Control | Implementation |
-|---|---|
-| Rate limiting | `src/middleware.ts` applies **Upstash Redis Ratelimit** (sliding window, 5 req / 60 s per IP) to `/api/auth/register` and `/api/auth/callback/credentials`. Returns HTTP 429 when exceeded. |
-| Inventory validation | `POST /api/orders` fetches the current stock from the database for each product and rejects the request if any item exceeds available inventory. |
-| Server-side pricing | `POST /api/stripe/create-session` always re-fetches prices from the database — client-sent prices are completely ignored. The same applies inside the Stripe webhook when computing the order total. |
-| Slug uniqueness | Product slugs are generated server-side with collision detection; the system appends an incrementing suffix if a slug already exists. |
-
----
-
-### A05 — Security Misconfiguration
-
-| Control | Implementation |
-|---|---|
-| Security headers | `next.config.ts` sets the following headers on every response: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: origin-when-cross-origin`, `Permissions-Policy`. |
-| CSP scope | `script-src` explicitly lists Stripe domains; `img-src` limits external images to utfs.io and images.unsplash.com; `frame-src` limits iframes to Stripe Checkout domains. |
-| Safe defaults | `.env.example` contains only placeholder values and is committed to source control. Actual secrets (`.env.local`, `.env`) are listed in `.gitignore` and never committed. |
-| Dependency hygiene | Managed via `pnpm` with a locked `pnpm-lock.yaml`. The CI pipeline runs `pnpm install --frozen-lockfile`, preventing unexpected dependency changes during builds. |
-
----
-
-### A07 — Identification and Authentication Failures
-
-| Control | Implementation |
-|---|---|
-| Session management | **NextAuth v5** (beta.28) with JWT strategy; tokens are signed with `AUTH_SECRET`. |
-| Token rotation | JWT is re-issued on every sign-in; old tokens become invalid on sign-out via `signOut({ callbackUrl: "/login" })`. |
-| Google OAuth | Alternative authentication via Google provider reduces reliance on password-only flows. |
-| Credential validation | `loginSchema` (Zod) validates email format and non-empty password before the credentials provider queries the database. |
-| Rate-limited logins | The credentials callback endpoint (`/api/auth/callback/credentials`) is rate-limited by the middleware (5 req / 60 s per IP), mitigating brute-force attacks. |
-
----
-
-### A08 — Software and Data Integrity Failures
-
-| Control | Implementation |
-|---|---|
-| Webhook signature verification | `src/app/api/stripe/webhook/route.ts` calls `stripe.webhooks.constructEvent(body, sig, STRIPE_WEBHOOK_SECRET)`. Any request with an invalid or missing signature is rejected with HTTP 400 before any business logic runs. |
-| Idempotency | Before creating an order in the webhook handler, the system checks for an existing order with the same `stripeSessionId`. Duplicate webhook deliveries are silently ignored. |
-| Raw body integrity | The webhook reads the request as raw text (`req.text()`) before Stripe signature verification, ensuring the payload is not mutated by middleware parsing. |
-
----
-
-### A09 — Security Logging and Monitoring Failures
-
-| Control | Implementation |
-|---|---|
-| Error monitoring | **Sentry** (`@sentry/nextjs`) is configured for both client and server; unhandled exceptions and rejected promises are captured automatically with request context. |
-| Production-only noise reduction | Prisma query logging is disabled in production; only errors are reported, preventing PII leakage through verbose logs. |
-| Alerting | Sentry can be configured with alert rules to notify on error spikes, new issues, or performance regressions (configured in the Sentry dashboard). |
-
----
-
-### A10 — Server-Side Request Forgery (SSRF)
-
-| Control | Implementation |
-|---|---|
-| Image domain allowlist | `next.config.ts` `images.remotePatterns` explicitly allows only `utfs.io`, `images.unsplash.com`, and `ufs.sh`. Requests to any other hostname are rejected by Next.js at runtime. |
-| No user-controlled URLs | No API route accepts a URL from the client and performs a server-side HTTP request to it. Product images are uploaded through UploadThing (which enforces its own allowlist) and stored as `utfs.io` URLs. |
-
----
-
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please **do not** open a public GitHub issue.
+To report a security vulnerability, please e-mail **security@shopforge.com.br** with:
 
-Send a private report to: **pedro.rafael090301@gmail.com**
+- A description of the vulnerability and its potential impact
+- Steps to reproduce or proof-of-concept
+- Affected component(s) and version(s)
 
-Include:
-- A clear description of the vulnerability
-- Steps to reproduce
-- Potential impact assessment
-- (Optional) a suggested fix
+We aim to acknowledge reports within **48 hours** and provide a fix timeline within **7 days** for critical issues.
 
-You can expect an acknowledgement within **48 hours** and a resolution timeline within **7 days** for critical issues.
+**Please do not open public GitHub issues for security vulnerabilities.**
+
+---
+
+## Audit — 2026-05-14
+
+### pnpm audit findings
+
+| Severity | Package | Installed | Fixed in | Status |
+|----------|---------|-----------|----------|--------|
+| HIGH | `effect` (transitive via `@uploadthing`) | < 3.20.0 | 3.20.0 | Waiting for UploadThing to update |
+| MODERATE | `next-auth` | 5.0.0-beta.28 | beta.30 | **Fixed** — updated to beta.31 |
+| MODERATE | `postcss` (transitive via `@sentry/nextjs`) | < 8.5.10 | 8.5.10 | Waiting for Sentry to update |
+
+### OWASP Top 10 Controls
+
+| # | Category | Control applied |
+|---|----------|----------------|
+| A01 | Broken Access Control | Role-based middleware (ADMIN guard on /dashboard); auth guard on all payment/user APIs |
+| A02 | Cryptographic Failures | HTTPS-only (HSTS header); no secrets in client bundles; AUTH_SECRET / NEXTAUTH_SECRET env vars |
+| A03 | Injection | Prisma ORM (parameterised queries); Zod input validation on all API routes |
+| A04 | Insecure Design | Rate limiting on auth, payment, and interaction endpoints via Upstash Redis |
+| A05 | Security Misconfiguration | CSP headers covering all external domains; X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
+| A06 | Vulnerable Components | next-auth updated to beta.31; transitive deps tracked via pnpm audit |
+| A07 | Auth Failures | Sliding-window rate limiting (5 req/60 s) on login/register; bcrypt password hashing |
+| A08 | Software & Data Integrity | STRIPE_WEBHOOK_SECRET verified on every webhook; idempotency keys on Mercado Pago |
+| A09 | Logging & Monitoring | No PII in server logs; Sentry DSN configured for error monitoring |
+| A10 | Server-Side Request Forgery | ViaCEP proxied server-side; no user-controlled URLs used in server fetches |
+
+### Additional findings fixed
+
+- Removed console.log leaking form data in ContactForm.tsx
+- CSP updated: added lh3.googleusercontent.com (Google avatars), viacep.com.br, api.mercadopago.com, Mercado Pago checkout domains, worker-src 'self' blob:
+- callbackUrl validation: only relative paths (/...) accepted as redirect destinations — prevents open redirect
+- /forgot-password added to auth-page list so logged-in users are redirected away
+- Rate limits added: /api/mercadopago/* 10/min, /api/stripe/* 10/min, /api/reviews 20/min, /api/wishlist 30/min
+
+### Dependency versions (2026-05-14)
+
+| Package | Version |
+|---------|---------|
+| next | 15.x |
+| next-auth | 5.0.0-beta.31 |
+| prisma | latest |
+| @upstash/ratelimit | latest |
+| stripe | latest |
+| mercadopago | latest |
+| zod | latest |
+
+---
+
+## Supported Versions
+
+| Version | Supported |
+|---------|-----------|
+| latest (main branch) | Yes |
+| older tags | No |

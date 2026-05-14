@@ -37,7 +37,6 @@ export default function ContactForm() {
 
   async function onSubmit(data: FormData) {
     await new Promise((r) => setTimeout(r, 800));
-    console.log("Contact form submission:", data);
     toast.success("Mensagem enviada com sucesso!", {
       description: "Retornaremos em até 1 dia útil.",
     });
