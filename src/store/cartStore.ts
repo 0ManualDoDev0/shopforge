@@ -50,6 +50,6 @@ export const useCartStore = create<CartStore>()(
         })),
       clearCart: () => set({ items: [] }),
     }),
-    { name: "shopforge-cart" }
+    { name: "shopforge-cart", skipHydration: true }
   )
 );

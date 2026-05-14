@@ -10,10 +10,12 @@ const messages = [
 ];
 
 export default function AnnouncementBar() {
+  const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
     const closed = sessionStorage.getItem("announcement-closed");
     if (!closed) setVisible(true);
   }, []);
@@ -31,7 +33,7 @@ export default function AnnouncementBar() {
     sessionStorage.setItem("announcement-closed", "1");
   }
 
-  if (!visible) return null;
+  if (!mounted || !visible) return null;
 
   return (
     <div className="relative bg-violet-600 py-2 px-4 text-center text-sm font-medium text-white">
