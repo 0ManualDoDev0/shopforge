@@ -64,7 +64,7 @@ export default function ShippingCalculator() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const res = await fetch(`/api/cep?cep=${digits}`);
       const data = await res.json();
 
       if (data.erro) {
