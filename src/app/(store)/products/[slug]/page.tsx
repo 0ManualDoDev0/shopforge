@@ -3,17 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, ChevronRight, AlertTriangle } from "lucide-react";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatPrice, formatDate } from "@/lib/utils";
-import ProductImageGallery from "@/components/store/ProductImageGallery";
-import AddToCartButton from "@/components/store/AddToCartButton";
+import ProductImageZoom from "@/components/store/ProductImageZoom";
+import ProductPurchase from "@/components/store/ProductPurchase";
+import ReviewForm from "@/components/store/ReviewForm";
 import TrustBar from "@/components/shared/TrustBar";
 import RecommendedProducts from "@/components/store/RecommendedProducts";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -44,16 +46,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
 
-  const product = await db.product.findUnique({
-    where: { slug, isArchived: false },
-    include: {
-      category: true,
-      reviews: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
+  const [product, session] = await Promise.all([
+    db.product.findUnique({
+      where: { slug, isArchived: false },
+      include: {
+        category: true,
+        reviews: {
+          include: { user: { select: { id: true, name: true, image: true } } },
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  });
+    }),
+    auth(),
+  ]);
 
   if (!product) notFound();
 
@@ -65,6 +70,14 @@ export default async function ProductPage({ params }: Props) {
 
   const price = Number(product.price);
   const isLowStock = product.stock > 0 && product.stock < 5;
+
+  const userId = session?.user?.id;
+  const hasReviewed = userId
+    ? product.reviews.some((r) => r.user.id === userId)
+    : false;
+  const canReview = !!userId && !hasReviewed;
+
+  const sku = product.id.slice(0, 8).toUpperCase();
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -87,8 +100,8 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="grid gap-10 md:grid-cols-2">
-        {/* Image gallery */}
-        <ProductImageGallery
+        {/* Image zoom gallery */}
+        <ProductImageZoom
           images={product.images.length > 0 ? product.images : ["/placeholder.png"]}
           productName={product.name}
         />
@@ -134,6 +147,7 @@ export default async function ProductPage({ params }: Props) {
               )}
           </div>
 
+          {/* Stock badge */}
           <p
             className={`text-sm font-medium ${
               product.stock > 0
@@ -146,7 +160,6 @@ export default async function ProductPage({ params }: Props) {
               : "Produto esgotado"}
           </p>
 
-          {/* Low stock warning */}
           {isLowStock && (
             <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900/40 dark:bg-red-900/20">
               <AlertTriangle className="size-4 shrink-0 text-red-500" />
@@ -158,8 +171,8 @@ export default async function ProductPage({ params }: Props) {
 
           <Separator />
 
-          {/* Add to cart */}
-          <AddToCartButton
+          {/* Quantity selector + Add to cart */}
+          <ProductPurchase
             product={{
               id: product.id,
               name: product.name,
@@ -180,6 +193,7 @@ export default async function ProductPage({ params }: Props) {
         <Tabs defaultValue="description">
           <TabsList>
             <TabsTrigger value="description">Descrição</TabsTrigger>
+            <TabsTrigger value="specs">Especificações</TabsTrigger>
             <TabsTrigger value="reviews">
               Avaliações ({product.reviews.length})
             </TabsTrigger>
@@ -191,81 +205,130 @@ export default async function ProductPage({ params }: Props) {
             </p>
           </TabsContent>
 
+          <TabsContent value="specs" className="mt-6">
+            <div className="overflow-hidden rounded-lg border">
+              <table className="w-full text-sm">
+                <tbody>
+                  {[
+                    ["Categoria", product.category.name],
+                    [
+                      "Disponibilidade",
+                      product.stock > 0 ? "Em estoque" : "Esgotado",
+                    ],
+                    ["SKU", sku],
+                    ["Condição", "Novo"],
+                  ].map(([label, value], i) => (
+                    <tr
+                      key={label}
+                      className={i % 2 === 0 ? "bg-muted/40" : "bg-background"}
+                    >
+                      <td className="px-4 py-3 font-medium text-muted-foreground w-40">
+                        {label}
+                      </td>
+                      <td className="px-4 py-3">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
           <TabsContent value="reviews" className="mt-6">
-            {product.reviews.length === 0 ? (
-              <p className="text-muted-foreground">Nenhuma avaliação ainda.</p>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <span className="text-5xl font-bold">
-                    {avgRating.toFixed(1)}
-                  </span>
-                  <div>
-                    <div className="flex">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`size-5 ${
-                            i < Math.round(avgRating)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "fill-muted text-muted"
-                          }`}
-                        />
-                      ))}
+            <div className="space-y-8">
+              {/* Review form for eligible users */}
+              {canReview && <ReviewForm productId={product.id} />}
+
+              {!userId && (
+                <p className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                  <Link href="/login" className="font-medium text-primary hover:underline">
+                    Faça login
+                  </Link>{" "}
+                  para deixar sua avaliação.
+                </p>
+              )}
+
+              {userId && hasReviewed && (
+                <p className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                  Você já avaliou este produto. Obrigado!
+                </p>
+              )}
+
+              {/* Existing reviews */}
+              {product.reviews.length === 0 ? (
+                <p className="text-muted-foreground">Nenhuma avaliação ainda.</p>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <span className="text-5xl font-bold">
+                      {avgRating.toFixed(1)}
+                    </span>
+                    <div>
+                      <div className="flex">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`size-5 ${
+                              i < Math.round(avgRating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "fill-muted text-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {product.reviews.length} avaliação
+                        {product.reviews.length !== 1 ? "ões" : ""}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {product.reviews.length} avaliação
-                      {product.reviews.length !== 1 ? "ões" : ""}
-                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-6">
+                    {product.reviews.map((review) => (
+                      <div key={review.id}>
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-9 w-9 shrink-0">
+                            <AvatarImage src={review.user.image ?? undefined} />
+                            <AvatarFallback>
+                              {review.user.name?.charAt(0).toUpperCase() ?? "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium">
+                                {review.user.name ?? "Usuário"}
+                              </p>
+                              <div className="flex">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`size-3.5 ${
+                                      i < review.rating
+                                        ? "fill-yellow-400 text-yellow-400"
+                                        : "fill-muted text-muted"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {formatDate(review.createdAt)}
+                            </p>
+                            {review.comment && (
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                {review.comment}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Separator className="mt-4" />
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <Separator />
-
-                <div className="space-y-6">
-                  {product.reviews.map((review) => (
-                    <div key={review.id}>
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-9 w-9 shrink-0">
-                          <AvatarImage src={review.user.image ?? undefined} />
-                          <AvatarFallback>
-                            {review.user.name?.charAt(0).toUpperCase() ?? "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium">
-                              {review.user.name ?? "Usuário"}
-                            </p>
-                            <div className="flex">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`size-3.5 ${
-                                    i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "fill-muted text-muted"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {formatDate(review.createdAt)}
-                          </p>
-                          {review.comment && (
-                            <p className="mt-2 text-sm text-muted-foreground">
-                              {review.comment}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Separator className="mt-4" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -5,6 +5,7 @@ import Providers from "@/components/shared/Providers";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import AnnouncementBar from "@/components/shared/AnnouncementBar";
+import ProgressBar from "@/components/shared/ProgressBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
+          <ProgressBar />
           <AnnouncementBar />
           <Navbar />
           {children}

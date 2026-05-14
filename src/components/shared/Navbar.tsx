@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ShoppingCart, Menu, Package, LogOut, ShoppingBag, User } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  Package,
+  LogOut,
+  ShoppingBag,
+  User,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -36,13 +45,26 @@ export default function Navbar() {
   const { itemCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) {
+      router.push(`/search?q=${encodeURIComponent(q)}`);
+      setSearchQuery("");
+      searchRef.current?.blur();
+    }
+  }
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
           {/* Logo */}
           <Link
             href="/"
@@ -53,7 +75,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6 shrink-0">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -65,8 +87,24 @@ export default function Navbar() {
             ))}
           </nav>
 
+          {/* Desktop search */}
+          <form
+            onSubmit={handleSearch}
+            className="hidden md:flex flex-1 max-w-sm items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 transition-colors focus-within:border-primary focus-within:bg-background"
+          >
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar produtos..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </form>
+
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <ThemeToggle />
 
             {/* Cart button */}
@@ -170,6 +208,27 @@ export default function Navbar() {
               ShopForge
             </SheetTitle>
           </SheetHeader>
+
+          {/* Mobile search */}
+          <div className="px-4 pb-4">
+            <form
+              onSubmit={(e) => {
+                handleSearch(e);
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5"
+            >
+              <Search className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar produtos..."
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </form>
+          </div>
+
           <nav className="flex flex-col px-4 gap-1">
             {navLinks.map((link) => (
               <Link
