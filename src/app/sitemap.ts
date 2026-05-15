@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
     }),
     db.category.findMany({
-      select: { slug: true, updatedAt: true },
+      select: { slug: true },
     }),
   ]);
 
@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((c) => c.slug)
     .map((c) => ({
       url: `${BASE_URL}/products?category=${c.slug}`,
-      lastModified: c.updatedAt ?? now,
+      lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
