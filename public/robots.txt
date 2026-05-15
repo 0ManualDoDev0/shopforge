@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /orders
+Disallow: /wishlist
+
+Sitemap: https://shopforge-three.vercel.app/sitemap.xml

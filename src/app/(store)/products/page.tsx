@@ -10,7 +10,40 @@ import ProductsSearchBar from "@/components/store/ProductsSearchBar";
 import ProductsToolbar from "@/components/store/ProductsToolbar";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Produtos — ShopForge" };
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  const category = Array.isArray(params.category)
+    ? params.category[0]
+    : params.category;
+
+  if (category) {
+    const cat = await db.category.findFirst({
+      where: { slug: category },
+      select: { name: true },
+    });
+    if (cat) {
+      return {
+        title: cat.name,
+        description: `Explore nossa coleção de ${cat.name} com qualidade garantida e os melhores preços.`,
+      };
+    }
+  }
+
+  const query = params.q;
+  if (query) {
+    return {
+      title: `Busca: "${query}"`,
+      description: `Resultados da busca por "${query}" na ShopForge.`,
+    };
+  }
+
+  return {
+    title: "Produtos",
+    description:
+      "Explore toda a nossa coleção com qualidade garantida e os melhores preços do mercado.",
+  };
+}
 
 const PER_PAGE = 12;
 

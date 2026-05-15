@@ -10,7 +10,7 @@ import NewsletterSection from "@/components/store/NewsletterSection";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "ShopForge — A Melhor Loja Online",
+  title: { absolute: "ShopForge — A Melhor Loja Online" },
   description:
     "Encontre os melhores produtos com qualidade garantida e os melhores preços do mercado.",
 };
@@ -55,6 +55,23 @@ async function getFeaturedProducts() {
   });
 }
 
+const SITE_URL = "https://shopforge-three.vercel.app";
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "ShopForge",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${SITE_URL}/products?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default async function StorePage() {
   const [categories, featured] = await Promise.all([
     getCategories(),
@@ -62,7 +79,12 @@ export default async function StorePage() {
   ]);
 
   return (
-    <main>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <main>
       {/* ── Hero ── */}
       <section className="bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 py-24 md:py-36">
         <div className="container mx-auto px-4 text-center">
@@ -245,5 +267,6 @@ export default async function StorePage() {
         </div>
       </section>
     </main>
+    </>
   );
 }

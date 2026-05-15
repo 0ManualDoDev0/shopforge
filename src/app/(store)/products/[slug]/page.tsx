@@ -36,11 +36,32 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await db.product.findUnique({ where: { slug } });
+  const product = await db.product.findUnique({
+    where: { slug },
+    select: { name: true, description: true, images: true },
+  });
   if (!product) return { title: "Produto não encontrado" };
+
+  const desc = product.description.slice(0, 160);
+  const ogImage = product.images[0]
+    ? [{ url: product.images[0], width: 800, height: 600, alt: product.name }]
+    : [{ url: "/og-image.png", width: 1200, height: 630, alt: product.name }];
+
   return {
-    title: `${product.name} — ShopForge`,
-    description: product.description.slice(0, 160),
+    title: product.name,
+    description: desc,
+    openGraph: {
+      title: product.name,
+      description: desc,
+      type: "website",
+      images: ogImage,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description: desc,
+      images: product.images.slice(0, 1),
+    },
   };
 }
 
@@ -80,8 +101,69 @@ export default async function ProductPage({ params }: Props) {
 
   const sku = product.id.slice(0, 8).toUpperCase();
 
+  const baseUrl =
+    process.env.NEXTAUTH_URL ?? "https://shopforge-three.vercel.app";
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: product.images,
+    sku,
+    brand: { "@type": "Brand", name: "ShopForge" },
+    offers: {
+      "@type": "Offer",
+      price: price.toFixed(2),
+      priceCurrency: "BRL",
+      availability:
+        product.stock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      url: `${baseUrl}/products/${product.slug}`,
+    },
+    ...(product.reviews.length > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: product.reviews.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: baseUrl },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: product.category.name,
+        item: `${baseUrl}/products?category=${product.category.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: product.name,
+        item: `${baseUrl}/products/${product.slug}`,
+      },
+    ],
+  };
+
   return (
-    <main className="container mx-auto px-4 py-8">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <main className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground transition-colors">
@@ -343,5 +425,6 @@ export default async function ProductPage({ params }: Props) {
         categorySlug={product.category.slug ?? ""}
       />
     </main>
+    </>
   );
 }
