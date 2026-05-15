@@ -45,6 +45,12 @@ jobs:
           UPSTASH_REDIS_REST_URL: https://placeholder.upstash.io
           UPSTASH_REDIS_REST_TOKEN: placeholder_token
 
+      - name: Unit tests
+        run: pnpm test --passWithNoTests --forceExit
+        env:
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
       - name: Lint
         run: pnpm lint
         env:

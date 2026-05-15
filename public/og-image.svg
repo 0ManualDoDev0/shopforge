@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#0f0728"/>
+      <stop offset="55%" stop-color="#1a0a4b"/>
+      <stop offset="100%" stop-color="#0c1a5e"/>
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#ddd6fe"/>
+    </linearGradient>
+    <linearGradient id="trustBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="40" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative ambient blobs (right side) -->
+  <circle cx="990"  cy="170" r="320" fill="#7c3aed" fill-opacity="0.07"/>
+  <circle cx="1110" cy="430" r="230" fill="#4338ca" fill-opacity="0.09"/>
+  <circle cx="860"  cy="510" r="170" fill="#a855f7" fill-opacity="0.05"/>
+  <circle cx="1150" cy="70"  r="110" fill="#6366f1" fill-opacity="0.11"/>
+
+  <!-- Bright inner glow behind main content -->
+  <circle cx="340" cy="290" r="260" fill="#7c3aed" fill-opacity="0.04" filter="url(#glow)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accent)"/>
+
+  <!-- ── Logo badge (top-left) ── -->
+  <rect x="60" y="54" width="70" height="70" rx="16" fill="url(#logoGrad)"/>
+  <!-- SF letters -->
+  <text x="95" y="102"
+        text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="30" font-weight="800" fill="white" letter-spacing="-1">SF</text>
+
+  <!-- Brand name beside logo -->
+  <text x="148" y="96"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="26" font-weight="600" fill="white" fill-opacity="0.80"
+        letter-spacing="-0.5">ShopForge</text>
+
+  <!-- Pill tag -->
+  <rect x="148" y="103" width="110" height="22" rx="11" fill="#a855f7" fill-opacity="0.25"/>
+  <text x="203" y="118"
+        text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="12" font-weight="600" fill="#c4b5fd" letter-spacing="1">E-COMMERCE</text>
+
+  <!-- ── Main headline ── -->
+  <text x="60" y="290"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="96" font-weight="800"
+        fill="url(#titleGrad)"
+        letter-spacing="-4">ShopForge</text>
+
+  <!-- Gradient underline accent -->
+  <rect x="60" y="308" width="530" height="5" rx="2.5" fill="url(#logoGrad)"/>
+
+  <!-- ── Subtitle ── -->
+  <text x="60" y="372"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="36" font-weight="400" fill="#c4b5fd"
+        letter-spacing="-0.5">A Melhor Loja Online do Brasil</text>
+
+  <!-- Supporting line -->
+  <text x="60" y="426"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" fill="#7c6db0" font-weight="400">
+    Produtos premium · Compra segura · Entrega garantida
+  </text>
+
+  <!-- ── Bottom trust bar ── -->
+  <rect x="0" y="526" width="1200" height="104" fill="url(#trustBar)"/>
+  <rect x="0" y="526" width="1200" height="1" fill="#ffffff" fill-opacity="0.08"/>
+
+  <!-- Trust item helper: circle + checkmark + label -->
+  <!-- Item 1: Pix -->
+  <circle cx="88"  cy="572" r="15" fill="#a855f7" fill-opacity="0.22"/>
+  <text x="88" y="578" text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="15" font-weight="700" fill="#c084fc">✓</text>
+  <text x="112" y="579"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" font-weight="600" fill="white">Pix</text>
+
+  <!-- Divider -->
+  <rect x="163" y="558" width="1" height="28" rx="0.5" fill="#ffffff" fill-opacity="0.15"/>
+
+  <!-- Item 2: Cartão -->
+  <circle cx="188" cy="572" r="15" fill="#a855f7" fill-opacity="0.22"/>
+  <text x="188" y="578" text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="15" font-weight="700" fill="#c084fc">✓</text>
+  <text x="212" y="579"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" font-weight="600" fill="white">Cartão</text>
+
+  <!-- Divider -->
+  <rect x="292" y="558" width="1" height="28" rx="0.5" fill="#ffffff" fill-opacity="0.15"/>
+
+  <!-- Item 3: Entrega Rápida -->
+  <circle cx="317" cy="572" r="15" fill="#a855f7" fill-opacity="0.22"/>
+  <text x="317" y="578" text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="15" font-weight="700" fill="#c084fc">✓</text>
+  <text x="341" y="579"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" font-weight="600" fill="white">Entrega Rápida</text>
+
+  <!-- Divider -->
+  <rect x="516" y="558" width="1" height="28" rx="0.5" fill="#ffffff" fill-opacity="0.15"/>
+
+  <!-- Item 4: Troca Garantida -->
+  <circle cx="541" cy="572" r="15" fill="#a855f7" fill-opacity="0.22"/>
+  <text x="541" y="578" text-anchor="middle"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="15" font-weight="700" fill="#c084fc">✓</text>
+  <text x="565" y="579"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" font-weight="600" fill="white">Troca Garantida</text>
+
+  <!-- URL label (right) -->
+  <text x="1140" y="579"
+        text-anchor="end"
+        font-family="system-ui,-apple-system,Arial,sans-serif"
+        font-size="18" fill="#7c6db0" font-weight="500">shopforge-three.vercel.app</text>
+</svg>
