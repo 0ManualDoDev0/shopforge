@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { productSchema } from "@/lib/validations/product.schema";
 
 type Params = { params: Promise<{ id: string }> };
 
-function isAdmin(token: unknown): boolean {
-  return (token as { role?: string } | null)?.role === "ADMIN";
-}
-
-async function requireAdmin(req: NextRequest): Promise<boolean> {
-  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-  const token = await getToken({ req, secret });
-  return isAdmin(token);
+async function requireAdmin(): Promise<boolean> {
+  const session = await auth();
+  return (session?.user as { role?: string } | undefined)?.role === "ADMIN";
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -34,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  if (!(await requireAdmin(req))) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -55,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!(await requireAdmin(req))) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

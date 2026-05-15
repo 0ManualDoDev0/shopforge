@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     const user = await db.user.create({
       data: { name, email, password: hashed },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, createdAt: true },
     });
 
     // Fire-and-forget — email failure must never reject the registration response

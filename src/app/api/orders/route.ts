@@ -80,27 +80,54 @@ export async function POST(req: NextRequest) {
     return sum + Number(p.price) * qty;
   }, 0);
 
-  const order = await db.order.create({
-    data: {
-      userId: session.user.id!,
-      total,
-      status: "PENDING",
-      items: {
-        create: products.map((p) => ({
-          productId: p.id,
-          quantity: items.find((i) => i.productId === p.id)?.quantity ?? 1,
-          price: p.price,
-        })),
-      },
-    },
-    include: {
-      items: {
-        include: {
-          product: { select: { id: true, name: true, images: true, slug: true } },
+  let order;
+  try {
+    order = await db.$transaction(async (tx) => {
+      // Atomic stock check + decrement — handles concurrent purchases correctly
+      for (const item of items) {
+        const product = products.find((p) => p.id === item.productId)!;
+        const updated = await tx.product.updateMany({
+          where: { id: product.id, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (updated.count === 0) {
+          throw new Error(`STOCK_INSUFFICIENT:${product.name}`);
+        }
+      }
+
+      return tx.order.create({
+        data: {
+          userId: session.user.id!,
+          total,
+          status: "PENDING",
+          items: {
+            create: products.map((p) => ({
+              productId: p.id,
+              quantity: items.find((i) => i.productId === p.id)?.quantity ?? 1,
+              price: p.price,
+            })),
+          },
         },
-      },
-    },
-  });
+        include: {
+          items: {
+            include: {
+              product: { select: { id: true, name: true, images: true, slug: true } },
+            },
+          },
+        },
+      });
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.startsWith("STOCK_INSUFFICIENT:")) {
+      const name = msg.slice("STOCK_INSUFFICIENT:".length);
+      return NextResponse.json(
+        { error: `Estoque insuficiente para "${name}". Tente novamente.` },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
 
   return NextResponse.json(order, { status: 201 });
 }
